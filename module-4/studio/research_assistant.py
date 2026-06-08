@@ -1,19 +1,26 @@
 import operator
+import os
 from pydantic import BaseModel, Field
 from typing import Annotated, List
 from typing_extensions import TypedDict
 
-from langchain_community.document_loaders import WikipediaLoader
-from langchain_tavily import TavilySearch  # updated 1.0
+# Local mocks (toggle with USE_MOCKS); fall back to the real Tavily/Wikipedia when off.
+from mocks import web_search, wikipedia_loader
+from local_llm import structured_output
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, get_buffer_string
 from langchain_openai import ChatOpenAI
 
 from langgraph.constants import Send
 from langgraph.graph import END, MessagesState, START, StateGraph
 
-### LLM
+### LLM (local OpenAI-compatible endpoint)
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0) 
+llm = ChatOpenAI(
+    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
+    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
+    api_key=os.environ.get("OPENAI_API_KEY", "local"),
+    temperature=0,
+)
 
 ### Schema 
 
@@ -92,7 +99,7 @@ def create_analysts(state: GenerateAnalystsState):
     human_analyst_feedback=state.get('human_analyst_feedback', '')
         
     # Enforce structured output
-    structured_llm = llm.with_structured_output(Perspectives)
+    structured_llm = structured_output(llm, Perspectives)
 
     # System message
     system_message = analyst_instructions.format(topic=topic,
@@ -159,10 +166,10 @@ def search_web(state: InterviewState):
     """ Retrieve docs from web search """
 
     # Search
-    tavily_search = TavilySearch(max_results=3)
+    tavily_search = web_search(max_results=3)
 
     # Search query
-    structured_llm = llm.with_structured_output(SearchQuery)
+    structured_llm = structured_output(llm, SearchQuery)
     search_query = structured_llm.invoke([search_instructions]+state['messages'])
     
     # Search
@@ -184,12 +191,12 @@ def search_wikipedia(state: InterviewState):
     """ Retrieve docs from wikipedia """
 
     # Search query
-    structured_llm = llm.with_structured_output(SearchQuery)
+    structured_llm = structured_output(llm, SearchQuery)
     search_query = structured_llm.invoke([search_instructions]+state['messages'])
     
     # Search
-    search_docs = WikipediaLoader(query=search_query.search_query, 
-                                  load_max_docs=2).load()
+    search_docs = wikipedia_loader(query=search_query.search_query,
+                                   load_max_docs=2).load()
 
      # Format
     formatted_search_docs = "\n\n---\n\n".join(

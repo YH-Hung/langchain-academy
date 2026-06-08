@@ -12,7 +12,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "pip install jupyterlab && pip3 install --user -r requirements.txt",
+	"postCreateCommand": "pip install uv && uv sync",
 
 	// Configure tool-specific properties.
 	// "customizations": {},

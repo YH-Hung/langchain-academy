@@ -38,6 +38,12 @@ services:
                 condition: service_healthy
         environment:
             REDIS_URI: redis://langgraph-redis:6379
-            OPENAI_API_KEY: "your_openai_api_key"
-            LANGSMITH_API_KEY: "your_langsmith_api_key"
+            # Local OpenAI-compatible LLM. From inside the container, reach the
+            # host's LM Studio / Ollama server via host.docker.internal.
+            OPENAI_BASE_URL: "http://host.docker.internal:1234/v1"
+            OPENAI_API_KEY: "local"
+            LLM_MODEL: "qwen2.5-7b-instruct"
+            # Optional: set to "false" and add TAVILY_API_KEY to use real search.
+            USE_MOCKS: "true"
+            # Optional tracing: LANGSMITH_API_KEY: "your_langsmith_api_key"
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable

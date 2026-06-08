@@ -2,84 +2,162 @@
 
 ## Introduction
 
-Welcome to LangChain Academy, Introduction to LangGraph! 
-This is a growing set of modules focused on foundational concepts within the LangChain ecosystem. 
-Module 0 is basic setup and Modules 1 - 5 focus on building in LangGraph, progressively adding more advanced themes.  Module 6 addresses deploying your agents. 
+Welcome to LangChain Academy, Introduction to LangGraph!
+This is a growing set of modules focused on foundational concepts within the LangChain ecosystem.
+Module 0 is basic setup and Modules 1 - 5 focus on building in LangGraph, progressively adding more advanced themes.  Module 6 addresses deploying your agents.
 In each module folder, you'll see a set of notebooks. A link to the LangChain Academy lesson is at the top of each notebook to guide you through the topic. Each module also has a `studio` subdirectory, with a set of relevant graphs that we will explore using the LangGraph API and Studio.
+
+> **This fork runs entirely locally.** Instead of the OpenAI API it uses a local,
+> OpenAI-compatible LLM server (LM Studio or Ollama); it manages its environment with
+> [uv](https://docs.astral.sh/uv/); it runs in **JupyterLab**; and it ships offline
+> **mocks** for the external search APIs (Tavily, Wikipedia) so the course works with no
+> cloud accounts or API keys. See [Local LLM](#set-up-a-local-llm) and
+> [Running offline](#running-offline-with-mocks) below.
 
 ## Setup
 
-### Python version
+### Install uv
 
-Make sure you're using Python version 3.11, 3.12, or 3.13.
+This project uses [uv](https://docs.astral.sh/uv/) to manage Python and dependencies.
+
 ```
-python3 --version
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
+
+uv reads `.python-version` (3.11) and will download a matching interpreter automatically —
+you do not need to install Python yourself.
 
 ### Clone repo
 ```
 git clone https://github.com/langchain-ai/langchain-academy.git
-$ cd langchain-academy
+cd langchain-academy
 ```
-Or, if you prefer, you can download a zip file [here](https://github.com/langchain-ai/langchain-academy/archive/refs/heads/main.zip).
 
 ### Create an environment and install dependencies
-#### Mac/Linux/WSL
+
 ```
-$ python3 -m venv lc-academy-env
-$ source lc-academy-env/bin/activate
-$ pip install -r requirements.txt
+uv sync
 ```
-#### Windows Powershell
+
+This creates a `.venv/` with all dependencies (including JupyterLab) and installs the
+small `lc_local` helper package used by the notebooks. Run course commands either by
+prefixing them with `uv run` (e.g. `uv run jupyter lab`) or by activating the venv:
+
 ```
-PS> python3 -m venv lc-academy-env
-PS> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-PS> .\lc-academy-env\Scripts\Activate.ps1
-PS> pip install -r requirements.txt
+# macOS / Linux
+source .venv/bin/activate
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 ```
+
+### Set up a local LLM
+
+The course talks to any **OpenAI-compatible** local server. Pick one:
+
+#### Option A — LM Studio (default)
+1. Install [LM Studio](https://lmstudio.ai/) and download a **tool-capable** instruct model
+   (e.g. `qwen2.5-7b-instruct` or `llama-3.1-8b-instruct`). Tool calling and structured
+   output are used throughout the course, so the model must support tools.
+2. In LM Studio, go to the **Developer / Local Server** tab and **Start Server**
+   (default `http://localhost:1234/v1`).
+3. Set `LLM_MODEL` (see `.env` below) to the model identifier shown in LM Studio.
+
+#### Option B — Ollama
+1. Install [Ollama](https://ollama.com/) and pull a tool-capable model:
+   ```
+   ollama pull llama3.1
+   ```
+2. Ollama serves an OpenAI-compatible endpoint at `http://localhost:11434/v1`.
+3. In `.env`, set `OPENAI_BASE_URL=http://localhost:11434/v1` and `LLM_MODEL=llama3.1`.
+
+### Configure environment variables
+
+Copy the example file and edit it to match your setup:
+
+```
+cp .env.example .env
+```
+
+| Variable          | Default                        | Purpose                                                        |
+| ----------------- | ------------------------------ | -------------------------------------------------------------- |
+| `OPENAI_BASE_URL` | `http://localhost:1234/v1`     | Local server URL (LM Studio; Ollama = `…:11434/v1`).           |
+| `OPENAI_API_KEY`  | `local`                        | Any non-empty string — local servers ignore it.               |
+| `LLM_MODEL`       | `qwen2.5-7b-instruct`          | Must match the model you loaded/pulled (tool-capable).         |
+| `USE_MOCKS`       | `true`                         | Use offline mocks for Tavily/Wikipedia (see below).            |
+
+The notebooks call `setup_env()` from the `lc_local` package, which loads `.env` and
+applies these defaults, so a fresh checkout runs out of the box once a local model is
+serving.
 
 ### Running notebooks
-If you don't have Jupyter set up, follow the installation instructions [here](https://jupyter.org/install).
-```
-$ jupyter notebook
-```
 
-### Setting up env variables
-Briefly going over how to set up environment variables. 
-#### Mac/Linux/WSL
 ```
-$ export API_ENV_VAR="your-api-key-here"
-```
-#### Windows Powershell
-```
-PS> $env:API_ENV_VAR = "your-api-key-here"
+uv run jupyter lab
 ```
 
-### Set OpenAI API key
-* If you don't have an OpenAI API key, you can sign up [here](https://openai.com/index/openai-api/).
-*  Set `OPENAI_API_KEY` in your environment 
+Make sure the notebook kernel is this project's `.venv` (the default when launched with
+`uv run`) so that `import lc_local` resolves.
 
-### Sign up and Set LangSmith API
-* Sign up for LangSmith [here](https://docs.langchain.com/langsmith/create-account-api-key#create-an-account-and-api-key), find out more about LangSmith and how to use it within your workflow [here](https://www.langchain.com/langsmith). 
-*  Set `LANGSMITH_API_KEY`, `LANGSMITH_TRACING_V2="true"` `LANGSMITH_PROJECT="langchain-academy"`in your environment 
-*  If you are on the EU instance also set `LANGSMITH_ENDPOINT`="https://eu.api.smith.langchain.com" as well.
+### Running offline (with mocks)
 
-### Set up Tavily API for web search
+Some lessons (Module 0 and Module 4) use external web search (Tavily) and Wikipedia. To
+keep the course fully offline, those calls are routed through drop-in **mocks** that
+return deterministic placeholder data. Mocks are **on by default** (`USE_MOCKS=true`).
 
-* Tavily Search API is a search engine optimized for LLMs and RAG, aimed at efficient, 
-quick, and persistent search results. 
-* You can sign up for an API key [here](https://tavily.com/). 
-It's easy to sign up and offers a very generous free tier. Some lessons (in Module 4) will use Tavily. 
+To use the real services instead, set `USE_MOCKS=false` in `.env` and provide a
+`TAVILY_API_KEY` (sign up at [tavily.com](https://tavily.com/) — Wikipedia needs no key).
 
-* Set `TAVILY_API_KEY` in your environment.
+### Optional: LangSmith tracing
+
+Tracing is **off by default**. To enable it, add the following to `.env`:
+
+```
+LANGSMITH_API_KEY=lsv2-...
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=langchain-academy
+```
+
+Sign up for LangSmith [here](https://docs.langchain.com/langsmith/create-account-api-key#create-an-account-and-api-key).
+
+### Local model notes & troubleshooting
+
+The course leans heavily on **tool calling** and **structured output**, so model choice matters:
+
+* **Use a tool-capable _instruct_ model** (e.g. `qwen2.5-7b-instruct`, `llama-3.1-8b-instruct`).
+* **Avoid "reasoning" models** (e.g. the QwQ / qwen3.x *reasoning* variants) with LM Studio for
+  this course. They tend to over-reason and return empty content under structured-output /
+  forced-tool-call constraints, so `with_structured_output` (Module 4) won't return anything.
+* **How structured output works here:** local servers reject the *named-tool* `tool_choice`
+  that `with_structured_output` normally uses (LM Studio only accepts `none`/`auto`/`required`).
+  The `lc_local` helper and the Module-4 studio graphs route structured output through a single
+  tool with `tool_choice="required"` and parse the result — no code change needed in your lessons.
+* **Modules 5-6 use [trustcall](https://github.com/hinthornw/trustcall)**, which forces a
+  *specific* tool by name. LM Studio's server rejects that named `tool_choice`, so trustcall-based
+  memory extraction may fail there. Use **Ollama** or a hosted endpoint that supports named
+  `tool_choice` for those modules.
+* If a graph hangs or returns empty output, it's almost always the model — switch to a smaller,
+  non-reasoning instruct model that fits comfortably in your RAM/VRAM.
 
 ### Set up Studio
 
 * Studio is a custom IDE for viewing and testing agents.
 * Studio can be run locally and opened in your browser on Mac, Windows, and Linux.
-* See documentation [here](https://docs.langchain.com/langsmith/studio#local-development-server) on the local Studio development server. 
-* Graphs for LangGraph Studio are in the `module-x/studio/` folders for module 1-5.
-* To start the local development server, make sure your virtual environment is active and run the following command in your terminal in the `/studio` directory in each module:
+* See documentation [here](https://docs.langchain.com/langsmith/studio#local-development-server) on the local Studio development server.
+* Graphs for LangGraph Studio are in the `module-x/studio/` folders for modules 1-5 (and `module-6/deployment/`).
+* The studio graphs read the same local-LLM variables from a `.env` file in their own
+  folder. Create those from the templates (run from the repo root):
+
+```
+for d in module-1/studio module-2/studio module-3/studio module-4/studio module-5/studio module-6/deployment; do
+  cp "$d/.env.example" "$d/.env"
+done
+```
+
+* To start the local development server, activate the venv and run the following command
+  in the `studio` directory of each module:
 
 ```
 langgraph dev
@@ -93,13 +171,3 @@ You should see the following output:
 ```
 
 Open your browser and navigate to the Studio UI: `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`.
-
-* To use Studio, you will need to create a .env file with the relevant API keys
-* Run this from the command line to create these files for module 1 to 5, as an example:
-```
-for i in {1..5}; do
-  cp module-$i/studio/.env.example module-$i/studio/.env
-  echo "OPENAI_API_KEY=\"$OPENAI_API_KEY\"" > module-$i/studio/.env
-done
-echo "TAVILY_API_KEY=\"$TAVILY_API_KEY\"" >> module-4/studio/.env
-```

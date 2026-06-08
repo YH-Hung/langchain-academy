@@ -1,3 +1,5 @@
+import os
+
 from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 
@@ -33,8 +35,12 @@ def divide(a: int, b: int) -> float:
 
 tools = [add, multiply, divide]
 
-# Define LLM with bound tools
-llm = ChatOpenAI(model="gpt-4o")
+# Define LLM with bound tools (local OpenAI-compatible endpoint)
+llm = ChatOpenAI(
+    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
+    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
+    api_key=os.environ.get("OPENAI_API_KEY", "local"),
+)
 llm_with_tools = llm.bind_tools(tools)
 
 # System message

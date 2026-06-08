@@ -1,11 +1,18 @@
+import os
 from typing import Literal
 from langchain_core.messages import HumanMessage, SystemMessage, RemoveMessage
 from langgraph.graph import MessagesState
 from langgraph.graph import StateGraph, START, END
 
 # We will use this model for both the conversation and the summarization
+# (local OpenAI-compatible endpoint)
 from langchain_openai import ChatOpenAI
-model = ChatOpenAI(model="gpt-4o", temperature=0) 
+model = ChatOpenAI(
+    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
+    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
+    api_key=os.environ.get("OPENAI_API_KEY", "local"),
+    temperature=0,
+)
 
 # State class to store messages and summary
 class State(MessagesState):

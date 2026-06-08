@@ -1,3 +1,5 @@
+import os
+
 from langchain_core.messages import SystemMessage
 from langchain_core.runnables.config import RunnableConfig
 from langchain_openai import ChatOpenAI
@@ -5,8 +7,13 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.store.base import BaseStore
 import configuration
 
-# Initialize the LLM
-model = ChatOpenAI(model="gpt-4o", temperature=0) 
+# Initialize the LLM (local OpenAI-compatible endpoint)
+model = ChatOpenAI(
+    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
+    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
+    api_key=os.environ.get("OPENAI_API_KEY", "local"),
+    temperature=0,
+)
 
 # Chatbot instruction
 MODEL_SYSTEM_MESSAGE = """You are a helpful assistant with memory that provides information about the user. 

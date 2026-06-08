@@ -1,18 +1,25 @@
 import operator
+import os
 from typing import Annotated
 from typing_extensions import TypedDict
 
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from langchain_community.document_loaders import WikipediaLoader
-from langchain_tavily import TavilySearch  # updated 1.0
+# Local mocks (toggle with USE_MOCKS); fall back to the real Tavily/Wikipedia when off.
+from mocks import web_search, wikipedia_loader
 
 from langchain_openai import ChatOpenAI
 
 from langgraph.graph import StateGraph, START, END
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0) 
+# LLM (local OpenAI-compatible endpoint)
+llm = ChatOpenAI(
+    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
+    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
+    api_key=os.environ.get("OPENAI_API_KEY", "local"),
+    temperature=0,
+)
 
 class State(TypedDict):
     question: str
@@ -24,7 +31,7 @@ def search_web(state):
     """ Retrieve docs from web search """
 
     # Search
-    tavily_search = TavilySearch(max_results=3)
+    tavily_search = web_search(max_results=3)
     data = tavily_search.invoke({"query": state['question']})
     search_docs = data.get("results", data)
 
@@ -43,8 +50,8 @@ def search_wikipedia(state):
     """ Retrieve docs from wikipedia """
 
     # Search
-    search_docs = WikipediaLoader(query=state['question'], 
-                                  load_max_docs=2).load()
+    search_docs = wikipedia_loader(query=state['question'],
+                                   load_max_docs=2).load()
 
      # Format
     formatted_search_docs = "\n\n---\n\n".join(
