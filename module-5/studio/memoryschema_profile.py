@@ -1,23 +1,16 @@
-import os
-
 from pydantic import BaseModel, Field
 
 from trustcall import create_extractor
 
 from langchain_core.messages import SystemMessage
 from langchain_core.runnables.config import RunnableConfig
-from langchain_openai import ChatOpenAI
+from local_llm import chat_model
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.store.base import BaseStore
 import configuration
 
 # Initialize the LLM (local OpenAI-compatible endpoint)
-model = ChatOpenAI(
-    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
-    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
-    api_key=os.environ.get("OPENAI_API_KEY", "local"),
-    temperature=0,
-)
+model = chat_model(temperature=0)
 
 # Schema 
 class UserProfile(BaseModel):

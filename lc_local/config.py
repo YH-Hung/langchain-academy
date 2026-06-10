@@ -55,6 +55,10 @@ def _describe_tool(schema):
     return tool
 
 
+# tool_choice values local servers understand ("any" is LangChain's alias for "required").
+_SERVER_TOOL_CHOICES = ("auto", "none", "any", "required")
+
+
 class LocalChatOpenAI(ChatOpenAI):
     """``ChatOpenAI`` tuned for local OpenAI-compatible servers.
 
@@ -63,7 +67,21 @@ class LocalChatOpenAI(ChatOpenAI):
     {none, auto, required} — so they reject the named-tool ``tool_choice`` used by
     both the ``json_schema`` and ``function_calling`` methods. This forces a single
     bound tool with ``tool_choice="required"`` and parses the resulting tool call.
+
+    ``bind_tools`` likewise normalizes any named ``tool_choice`` (used by trustcall
+    in Modules 5-6, including its internal ``PatchDoc`` update tool) to
+    ``"required"``. Trustcall only names a tool when it binds a single one, so with
+    one tool bound ``"required"`` is equivalent to forcing it by name.
     """
+
+    def bind_tools(self, tools, *, tool_choice=None, **kwargs):
+        if isinstance(tool_choice, dict) or (
+            isinstance(tool_choice, str) and tool_choice not in _SERVER_TOOL_CHOICES
+        ):
+            tool_choice = "required"
+        return super().bind_tools(
+            [_describe_tool(t) for t in tools], tool_choice=tool_choice, **kwargs
+        )
 
     def with_structured_output(self, schema=None, *, method=None, include_raw=False, **kwargs):
         from langchain_core.output_parsers.openai_tools import (

@@ -1,4 +1,3 @@
-import os
 import uuid
 from datetime import datetime
 
@@ -12,7 +11,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import merge_message_runs
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from langchain_openai import ChatOpenAI
+from local_llm import chat_model
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, MessagesState, START, END
@@ -126,12 +125,7 @@ class UpdateMemory(TypedDict):
     update_type: Literal['user', 'todo', 'instructions']
 
 # Initialize the model (local OpenAI-compatible endpoint)
-model = ChatOpenAI(
-    model=os.environ.get("LLM_MODEL", "qwen2.5-7b-instruct"),
-    base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:1234/v1"),
-    api_key=os.environ.get("OPENAI_API_KEY", "local"),
-    temperature=0,
-)
+model = chat_model(temperature=0)
 
 ## Create the Trustcall extractors for updating the user profile and ToDo list
 profile_extractor = create_extractor(

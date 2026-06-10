@@ -135,9 +135,12 @@ The course leans heavily on **tool calling** and **structured output**, so model
   The `lc_local` helper and the Module-4 studio graphs route structured output through a single
   tool with `tool_choice="required"` and parse the result — no code change needed in your lessons.
 * **Modules 5-6 use [trustcall](https://github.com/hinthornw/trustcall)**, which forces a
-  *specific* tool by name. LM Studio's server rejects that named `tool_choice`, so trustcall-based
-  memory extraction may fail there. Use **Ollama** or a hosted endpoint that supports named
-  `tool_choice` for those modules.
+  *specific* tool by name — a `tool_choice` form LM Studio rejects (and Ollama / mlx-lm
+  silently ignore, so switching servers doesn't help). The local helpers (`lc_local` for
+  notebooks, `local_llm.py` in the module-5/6 studio folders) normalize that named
+  `tool_choice` to `required`, which is equivalent when a single tool is bound, so trustcall
+  works against LM Studio out of the box. A hosted OpenAI-spec endpoint remains the only
+  option if you need true named `tool_choice`.
 * If a graph hangs or returns empty output, it's almost always the model — switch to a smaller,
   non-reasoning instruct model that fits comfortably in your RAM/VRAM.
 
