@@ -73,6 +73,29 @@ The course talks to any **OpenAI-compatible** local server. Pick one:
 2. Ollama serves an OpenAI-compatible endpoint at `http://localhost:11434/v1`.
 3. In `.env`, set `OPENAI_BASE_URL=http://localhost:11434/v1` and `LLM_MODEL=llama3.1`.
 
+#### Option C — mlx-lm server (Apple Silicon)
+1. Install the optional extra (Apple Silicon Macs only):
+   ```
+   uv sync --extra mlx
+   ```
+2. Start the server with a tool-capable MLX model (downloaded from Hugging Face on first use):
+   ```
+   uv run mlx_lm.server --model mlx-community/Qwen2.5-7B-Instruct-4bit --port 8080
+   ```
+3. In `.env`, set `OPENAI_BASE_URL=http://localhost:8080/v1` and
+   `LLM_MODEL=mlx-community/Qwen2.5-7B-Instruct-4bit`.
+
+If the Hugging Face model download hangs partway, retry with the Xet backend disabled:
+`HF_HUB_DISABLE_XET=1 uv run hf download <model>` before starting the server.
+
+> **Caveat — experimental:** mlx-lm works for the plain-chat lessons, but its tool-calling
+> support is currently unreliable: it ignores `tool_choice` entirely (never *forces* a tool
+> call), and as of mlx-lm 0.31.x the server often fails to return `tool_calls` even when the
+> model emits a valid call (see e.g. [mlx-lm#1262](https://github.com/ml-explore/mlx-lm/issues/1262),
+> [mlx-lm#1293](https://github.com/ml-explore/mlx-lm/issues/1293)). Since most modules rely on
+> tool calling and structured output, prefer LM Studio (Option A) — on Apple Silicon it can run
+> the same MLX models via its MLX engine, with working tool calls.
+
 ### Configure environment variables
 
 Copy the example file and edit it to match your setup:
@@ -83,7 +106,7 @@ cp .env.example .env
 
 | Variable          | Default                        | Purpose                                                        |
 | ----------------- | ------------------------------ | -------------------------------------------------------------- |
-| `OPENAI_BASE_URL` | `http://localhost:1234/v1`     | Local server URL (LM Studio; Ollama = `…:11434/v1`).           |
+| `OPENAI_BASE_URL` | `http://localhost:1234/v1`     | Local server URL (LM Studio; Ollama = `…:11434/v1`; mlx-lm = `…:8080/v1`). |
 | `OPENAI_API_KEY`  | `local`                        | Any non-empty string — local servers ignore it.               |
 | `LLM_MODEL`       | `qwen2.5-7b-instruct`          | Must match the model you loaded/pulled (tool-capable).         |
 | `USE_MOCKS`       | `true`                         | Use offline mocks for Tavily/Wikipedia (see below).            |

@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 # Defaults applied by ``setup_env()`` only when a variable is not already set.
 DEFAULTS = {
-    # LM Studio local server. Ollama alternative: "http://localhost:11434/v1"
+    # LM Studio local server. Ollama: "http://localhost:11434/v1" — mlx-lm: "http://localhost:8080/v1"
     "OPENAI_BASE_URL": "http://localhost:1234/v1",
     # Local servers ignore the key, but the OpenAI client requires it to be non-empty.
     "OPENAI_API_KEY": "local",

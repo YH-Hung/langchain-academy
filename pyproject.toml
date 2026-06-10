@@ -25,6 +25,10 @@ dependencies = [
     "cryptography>=46.0.7",
 ]
 
+[project.optional-dependencies]
+# Apple Silicon only: local serving via `uv run mlx_lm.server` (README "Option C").
+mlx = ["mlx-lm; sys_platform == 'darwin' and platform_machine == 'arm64'"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
