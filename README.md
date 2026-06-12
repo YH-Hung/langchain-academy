@@ -224,3 +224,26 @@ You should see the following output:
 ```
 
 Open your browser and navigate to the Studio UI: `https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024`.
+
+#### How local is `langgraph dev`?
+
+The **server** (`http://127.0.0.1:2024`) is fully local: no LangSmith account, no API
+key, no cloud calls — your graphs, state, and LLM calls never leave your machine. The
+**Studio UI** is the one exception: it is a web app served from `smith.langchain.com`,
+so opening it needs internet access and a (free) LangSmith login. The UI then talks
+directly to your local server via the `baseUrl` parameter — your data still stays local.
+
+If you want to skip the cloud-served UI entirely, everything it does has a local path:
+
+* **Inspecting runs** — enable [Langfuse tracing](#optional-tracing-with-langfuse)
+  (uncomment the tracing block in the module's `studio/.env`); every Studio/SDK run is
+  traced to your local Langfuse.
+* **Invoking and testing graphs** — use the LangGraph SDK or `curl` against
+  `http://127.0.0.1:2024` (exactly what the module-6 notebooks teach), or the built-in
+  API docs at `http://127.0.0.1:2024/docs`.
+* **Chat-style interaction** — the open-source
+  [agent-chat-ui](https://github.com/langchain-ai/agent-chat-ui) runs locally and
+  connects to the local server.
+* **Graph visualization** — `graph.get_graph().draw_mermaid_png()` in a notebook for a
+  static diagram. The interactive graph view and time-travel UI have no self-hosted
+  equivalent — that part is cloud-Studio-only.
