@@ -45,5 +45,11 @@ services:
             LLM_MODEL: "qwen2.5-7b-instruct"
             # Optional: set to "false" and add TAVILY_API_KEY to use real search.
             USE_MOCKS: "true"
-            # Optional tracing: LANGSMITH_API_KEY: "your_langsmith_api_key"
+            # Optional: trace to local Langfuse running on the host
+            # (docker compose -f ../../langfuse/docker-compose.yml up -d):
+            # LANGSMITH_TRACING: "true"
+            # LANGSMITH_TRACING_MODE: "otel"
+            # OTEL_EXPORTER_OTLP_ENDPOINT: "http://host.docker.internal:3000/api/public/otel/v1/traces"
+            # OTEL_EXPORTER_OTLP_HEADERS: "Authorization=Basic cGstbGYtbGFuZ2NoYWluLWFjYWRlbXk6c2stbGYtbGFuZ2NoYWluLWFjYWRlbXk="
+            # Or cloud LangSmith instead: LANGSMITH_API_KEY: "your_langsmith_api_key"
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable

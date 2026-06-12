@@ -4,6 +4,7 @@ Points ``langchain_openai.ChatOpenAI`` at a local OpenAI-compatible server
 (LM Studio by default, Ollama as an alternative) so the course runs offline with
 no cloud API keys.
 """
+import base64
 import os
 
 from dotenv import find_dotenv, load_dotenv
@@ -27,14 +28,43 @@ def setup_env() -> None:
     """Load a local ``.env`` (if present) and apply offline-friendly defaults.
 
     Safe to call multiple times. Existing environment variables always win, so a
-    ``.env`` file or a shell ``export`` overrides the defaults above. LangSmith
-    tracing stays disabled unless ``LANGSMITH_API_KEY`` is provided.
+    ``.env`` file or a shell ``export`` overrides the defaults above. Tracing
+    stays disabled unless explicitly opted in: ``LANGFUSE_TRACING=true`` routes
+    traces to a local Langfuse (see ``langfuse/docker-compose.yml``), while
+    ``LANGSMITH_API_KEY`` keeps the stock cloud LangSmith path.
     """
     load_dotenv(find_dotenv(usecwd=True))
     for key, value in DEFAULTS.items():
         os.environ.setdefault(key, value)
-    # Only trace to LangSmith when the user has explicitly opted in with a key.
-    if not os.environ.get("LANGSMITH_API_KEY"):
+    _setup_tracing()
+
+
+def _setup_tracing() -> None:
+    """Route LangChain's automatic tracing to local Langfuse, cloud, or off.
+
+    Langfuse mode reuses the ``langsmith`` SDK's OTLP-only export
+    (``LANGSMITH_TRACING_MODE=otel``): no LangSmith cloud calls are made, and
+    LangChain/LangGraph's built-in tracer sends nested spans to Langfuse's
+    OpenTelemetry endpoint instead.
+    """
+    if os.environ.get("LANGSMITH_API_KEY"):
+        return  # explicit cloud LangSmith opt-in: stock env-var path unchanged
+    if os.environ.get("LANGFUSE_TRACING", "").lower() in ("1", "true", "yes"):
+        host = os.environ.get("LANGFUSE_HOST", "http://localhost:3000").rstrip("/")
+        public = os.environ.get("LANGFUSE_PUBLIC_KEY", "pk-lf-langchain-academy")
+        secret = os.environ.get("LANGFUSE_SECRET_KEY", "sk-lf-langchain-academy")
+        auth = base64.b64encode(f"{public}:{secret}".encode()).decode()
+        # langsmith passes this endpoint verbatim to OTLPSpanExporter, so it
+        # must include the full /v1/traces path.
+        os.environ.setdefault(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", f"{host}/api/public/otel/v1/traces"
+        )
+        os.environ.setdefault("OTEL_EXPORTER_OTLP_HEADERS", f"Authorization=Basic {auth}")
+        os.environ["LANGSMITH_TRACING"] = "true"  # activates LangChain's tracer
+        os.environ["LANGSMITH_TRACING_MODE"] = "otel"  # OTLP only, no cloud calls
+        os.environ.setdefault("LANGSMITH_PROJECT", "langchain-academy")
+    else:
+        # Fully offline default: tracing stays off.
         os.environ.pop("LANGSMITH_TRACING", None)
         os.environ.pop("LANGCHAIN_TRACING_V2", None)
 

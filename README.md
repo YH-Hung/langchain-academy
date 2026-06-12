@@ -133,17 +133,44 @@ return deterministic placeholder data. Mocks are **on by default** (`USE_MOCKS=t
 To use the real services instead, set `USE_MOCKS=false` in `.env` and provide a
 `TAVILY_API_KEY` (sign up at [tavily.com](https://tavily.com/) — Wikipedia needs no key).
 
-### Optional: LangSmith tracing
+### Optional: tracing with Langfuse
 
-Tracing is **off by default**. To enable it, add the following to `.env`:
+The course videos use [LangSmith](https://docs.langchain.com/langsmith/home) for tracing,
+but LangSmith is a cloud service (self-hosting is Enterprise-only). For a fully local
+setup, this repo ships a self-hosted [Langfuse](https://langfuse.com/) instead — an
+open-source observability UI where you can inspect every graph run, node, LLM call, and
+token count.
+
+Tracing is **off by default**. To enable it:
+
+1. Start Langfuse (needs Docker and ~3-4 GB RAM for its services):
+
+   ```
+   docker compose -f langfuse/docker-compose.yml up -d
+   ```
+
+2. Add this line to `.env`:
+
+   ```
+   LANGFUSE_TRACING=true
+   ```
+
+3. Open [http://localhost:3000](http://localhost:3000) (login: `admin@example.com` /
+   `langfuse-academy`) and watch traces appear in the `langchain-academy` project as you
+   run notebook cells.
+
+No notebook changes are needed — `lc_local.setup_env()` routes LangChain's built-in
+tracing to Langfuse via OpenTelemetry. The Studio graphs (`langgraph dev`) can trace to
+the same Langfuse too: uncomment the tracing block in the module's `studio/.env`.
+
+**Prefer cloud LangSmith instead?** Set the following in `.env` (takes precedence over
+Langfuse) — sign up [here](https://docs.langchain.com/langsmith/create-account-api-key#create-an-account-and-api-key):
 
 ```
 LANGSMITH_API_KEY=lsv2-...
 LANGSMITH_TRACING=true
 LANGSMITH_PROJECT=langchain-academy
 ```
-
-Sign up for LangSmith [here](https://docs.langchain.com/langsmith/create-account-api-key#create-an-account-and-api-key).
 
 ### Local model notes & troubleshooting
 
